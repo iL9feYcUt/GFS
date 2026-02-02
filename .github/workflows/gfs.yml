@@ -3,6 +3,9 @@ name: Update GFS
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,7 +18,7 @@ jobs:
           mkdir -p data
           echo "dummy" > data/gfs_temp_850.png
 
-      - name: Commit
+      - name: Commit and push
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
