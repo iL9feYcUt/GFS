@@ -4,47 +4,65 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap"
 }).addTo(map);
 
-const bounds = [[-90,-180],[90,180]];
-let overlay = null;
+const bounds = [
+  [-90, -180],
+  [90, 180]
+];
+
+let imageLayer = null;
 let windLayer = null;
 
-const times = ["f000", "f006", "f012"];
+const slider = document.getElementById("timeSlider");
+const label = document.getElementById("timeLabel");
+const windToggle = document.getElementById("windToggle");
 
-function loadFrame(i) {
-  const t = times[i];
-  document.getElementById("label").textContent = t;
+// ===== 等温線PNG切替 =====
+function updateImage(t) {
+  if (imageLayer) map.removeLayer(imageLayer);
 
-  if (overlay) map.removeLayer(overlay);
-  if (windLayer) map.removeLayer(windLayer);
-
-  overlay = L.imageOverlay(
-    `data/temp_850_${t}.png?v=${Date.now()}`,
+  imageLayer = L.imageOverlay(
+    `data/temp_${t}.png?v=${Date.now()}`,
     bounds,
     { opacity: 0.6 }
   ).addTo(map);
-
-  fetch(`data/wind_850_${t}.json?v=${Date.now()}`)
-    .then(r => r.json())
-    .then(data => {
-      windLayer = L.layerGroup();
-      data.forEach(p => {
-        const len = Math.sqrt(p.u*p.u + p.v*p.v);
-        if (len < 5) return;
-
-        const lat2 = p.lat + p.v * 0.1;
-        const lon2 = p.lon + p.u * 0.1;
-
-        L.polyline(
-          [[p.lat, p.lon], [lat2, lon2]],
-          { color: "white", weight: 1 }
-        ).addTo(windLayer);
-      });
-      windLayer.addTo(map);
-    });
 }
 
-document.getElementById("time").addEventListener("input", e => {
-  loadFrame(Number(e.target.value));
-});
+// ===== 風粒子描画 =====
+async function updateWind(t) {
+  if (windLayer) map.removeLayer(windLayer);
+  if (!windToggle.checked) return;
 
-loadFrame(0);
+  const res = await fetch(`data/wind_${t}.json?v=${Date.now()}`);
+  const data = await res.json();
+
+  const canvas = L.canvas({ padding: 0.5 });
+  windLayer = L.layerGroup();
+
+  data.forEach(p => {
+    const len = Math.sqrt(p.u * p.u + p.v * p.v) * 0.8;
+    const endLat = p.lat + p.v * 0.3;
+    const endLon = p.lon + p.u * 0.3;
+
+    const line = L.polyline(
+      [[p.lat, p.lon], [endLat, endLon]],
+      { color: "black", weight: 1 }
+    );
+
+    windLayer.addLayer(line);
+  });
+
+  windLayer.addTo(map);
+}
+
+// ===== 初期表示 =====
+function updateAll() {
+  const t = slider.value;
+  label.textContent = `t=${t}`;
+  updateImage(t);
+  updateWind(t);
+}
+
+slider.addEventListener("input", updateAll);
+windToggle.addEventListener("change", updateAll);
+
+updateAll();

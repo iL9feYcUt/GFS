@@ -1,18 +1,46 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>GFS 可視化</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>GFS Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { height: 100%; }
+
+    #control {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div id="slider">
-  <input type="range" min="0" max="2" step="1" value="0" id="time">
-  <span id="label">f000</span>
+<div id="control">
+  <div>
+    <input type="range" id="timeSlider" min="0" max="4" value="0">
+    <span id="timeLabel">t=0</span>
+  </div>
+  <div>
+    <label>
+      <input type="checkbox" id="windToggle" checked>
+      風粒子
+    </label>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
