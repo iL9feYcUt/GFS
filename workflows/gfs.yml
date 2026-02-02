@@ -1,0 +1,40 @@
+name: Update GFS
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wgrib2
+          pip install xarray netCDF4 matplotlib cartopy
+
+      - name: Download GFS
+        run: |
+          wget -O gfs.grb2 \
+          https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.t00z/pgrb2.1p00/gfs.t00z.pgrb2.1p00.f000
+
+      - name: Convert to NetCDF
+        run: |
+          wgrib2 gfs.grb2 -match ":TMP:850 mb:" -netcdf temp850.nc
+
+      - name: Create PNG
+        run: |
+          python scripts/gfs_to_png.py
+
+      - name: Commit
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add data/gfs_temp_850.png
+          git commit -m "Update GFS" || echo "No changes"
+          git push
