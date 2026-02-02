@@ -4,65 +4,91 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap"
 }).addTo(map);
 
-const bounds = [
-  [-90, -180],
-  [90, 180]
-];
+const bounds = [[-90, -180], [90, 180]];
 
-let imageLayer = null;
-let windLayer = null;
+const levelSel = document.getElementById("level");
+const timeSlider = document.getElementById("time");
+const label = document.getElementById("label");
 
-const slider = document.getElementById("timeSlider");
-const label = document.getElementById("timeLabel");
-const windToggle = document.getElementById("windToggle");
+let imgLayer = null;
+let canvasLayer = null;
+let particles = [];
 
-// ===== 等温線PNG切替 =====
-function updateImage(t) {
-  if (imageLayer) map.removeLayer(imageLayer);
+const canvas = document.createElement("canvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-  imageLayer = L.imageOverlay(
-    `data/temp_${t}.png?v=${Date.now()}`,
+function latlonToXY(lat, lon) {
+  return map.latLngToContainerPoint([lat, lon]);
+}
+
+// ===== 粒子生成 =====
+function initParticles(wind) {
+  particles = wind.map(p => ({
+    lat: p.lat,
+    lon: p.lon,
+    u: p.u,
+    v: p.v
+  }));
+}
+
+// ===== 粒子描画 =====
+function drawParticles() {
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "rgba(0,0,0,0.6)";
+  ctx.lineWidth = 1;
+
+  particles.forEach(p => {
+    const start = latlonToXY(p.lat, p.lon);
+    p.lat += p.v * 0.05;
+    p.lon += p.u * 0.05;
+
+    if (p.lat > 90 || p.lat < -90 || p.lon > 180 || p.lon < -180) return;
+
+    const end = latlonToXY(p.lat, p.lon);
+
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+  });
+
+  requestAnimationFrame(drawParticles);
+}
+
+// ===== 更新処理 =====
+async function update() {
+  const lev = levelSel.value;
+  const t = timeSlider.value;
+  label.textContent = `t=${t}`;
+
+  if (imgLayer) map.removeLayer(imgLayer);
+  if (canvasLayer) map.removeLayer(canvasLayer);
+
+  imgLayer = L.imageOverlay(
+    `data/${lev}/temp_${t}.png?v=${Date.now()}`,
     bounds,
     { opacity: 0.6 }
   ).addTo(map);
+
+  const res = await fetch(`data/${lev}/wind_${t}.json?v=${Date.now()}`);
+  const wind = await res.json();
+
+  initParticles(wind);
+
+  canvasLayer = L.canvasOverlay(() => {});
+  canvasLayer.onAdd = () => {
+    const pane = map.getPane("overlayPane");
+    pane.appendChild(canvas);
+  };
+  canvasLayer.addTo(map);
+
+  drawParticles();
 }
 
-// ===== 風粒子描画 =====
-async function updateWind(t) {
-  if (windLayer) map.removeLayer(windLayer);
-  if (!windToggle.checked) return;
+levelSel.addEventListener("change", update);
+timeSlider.addEventListener("input", update);
 
-  const res = await fetch(`data/wind_${t}.json?v=${Date.now()}`);
-  const data = await res.json();
-
-  const canvas = L.canvas({ padding: 0.5 });
-  windLayer = L.layerGroup();
-
-  data.forEach(p => {
-    const len = Math.sqrt(p.u * p.u + p.v * p.v) * 0.8;
-    const endLat = p.lat + p.v * 0.3;
-    const endLon = p.lon + p.u * 0.3;
-
-    const line = L.polyline(
-      [[p.lat, p.lon], [endLat, endLon]],
-      { color: "black", weight: 1 }
-    );
-
-    windLayer.addLayer(line);
-  });
-
-  windLayer.addTo(map);
-}
-
-// ===== 初期表示 =====
-function updateAll() {
-  const t = slider.value;
-  label.textContent = `t=${t}`;
-  updateImage(t);
-  updateWind(t);
-}
-
-slider.addEventListener("input", updateAll);
-windToggle.addEventListener("change", updateAll);
-
-updateAll();
+update();

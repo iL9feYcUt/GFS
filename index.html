@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>GFS Viewer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link
     rel="stylesheet"
@@ -11,7 +11,7 @@
   />
 
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; height: 100%; }
     #map { height: 100%; }
 
     #control {
@@ -32,14 +32,17 @@
 
 <div id="control">
   <div>
-    <input type="range" id="timeSlider" min="0" max="4" value="0">
-    <span id="timeLabel">t=0</span>
+    高度：
+    <select id="level">
+      <option value="850">850 hPa</option>
+      <option value="700">700 hPa</option>
+      <option value="500">500 hPa</option>
+    </select>
   </div>
+
   <div>
-    <label>
-      <input type="checkbox" id="windToggle" checked>
-      風粒子
-    </label>
+    <input type="range" id="time" min="0" max="4" value="0">
+    <span id="label">t=0</span>
   </div>
 </div>
 
