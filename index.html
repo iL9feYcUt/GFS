@@ -2,12 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>GFS 数値予報</title>
+<title>GFS 可視化</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <div id="map"></div>
+
+<div id="slider">
+  <input type="range" min="0" max="2" step="1" value="0" id="time">
+  <span id="label">f000</span>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="main.js"></script>
